@@ -33,40 +33,58 @@ function App() {
   }, [answer, codeword, misses])
 
   const handleGuess = () => {
-    if (!currentGuess || currentGuess.length !== 1 || gameState !== "playing") {
+    if (!currentGuess || gameState !== "playing") {
       return
     }
 
-    const letter = currentGuess.toLowerCase()
+    const guess = currentGuess.toLowerCase().trim()
     
-    // Check if letter already guessed
-    if (incorrectGuesses.includes(letter) || answer.includes(letter)) {
-      setMessage("⚠️ You already guessed that letter!")
-      setCurrentGuess("")
-      return
-    }
-
-    let found = false
-    let newAnswer = answer
-    const newRevealed = new Set(revealedLetters)
-
-    // Check if letter is in codeword
-    for (let i = 0; i < codeword.length; i++) {
-      if (letter === codeword[i]) {
-        newAnswer = newAnswer.substring(0, i) + letter + newAnswer.substring(i + 1)
-        newRevealed.add(i)
-        found = true
+    // Check if it's a full word guess
+    if (guess.length > 1) {
+      if (guess === codeword) {
+        // Correct word guess - reveal all letters
+        setAnswer(codeword)
+        setRevealedLetters(new Set([...Array(codeword.length).keys()]))
+        setMessage("🎯 Perfect! You guessed the entire codeword!")
+      } else {
+        // Wrong word guess
+        setIncorrectGuesses([...incorrectGuesses, guess])
+        setMisses(misses + 1)
+        setMessage(`❌ "${guess}" is not the codeword! The tractor beam pulls the person in further.`)
       }
-    }
-
-    if (found) {
-      setAnswer(newAnswer)
-      setRevealedLetters(newRevealed)
-      setMessage("✅ Correct! You're closer to cracking the codeword.")
     } else {
-      setIncorrectGuesses([...incorrectGuesses, letter])
-      setMisses(misses + 1)
-      setMessage("❌ Incorrect! The tractor beam pulls the person in further.")
+      // Single letter guess
+      const letter = guess
+      
+      // Check if letter already guessed
+      if (incorrectGuesses.includes(letter) || answer.includes(letter)) {
+        setMessage("⚠️ You already guessed that letter!")
+        setCurrentGuess("")
+        return
+      }
+
+      let found = false
+      let newAnswer = answer
+      const newRevealed = new Set(revealedLetters)
+
+      // Check if letter is in codeword
+      for (let i = 0; i < codeword.length; i++) {
+        if (letter === codeword[i]) {
+          newAnswer = newAnswer.substring(0, i) + letter + newAnswer.substring(i + 1)
+          newRevealed.add(i)
+          found = true
+        }
+      }
+
+      if (found) {
+        setAnswer(newAnswer)
+        setRevealedLetters(newRevealed)
+        setMessage("✅ Correct! You're closer to cracking the codeword.")
+      } else {
+        setIncorrectGuesses([...incorrectGuesses, letter])
+        setMisses(misses + 1)
+        setMessage("❌ Incorrect! The tractor beam pulls the person in further.")
+      }
     }
 
     setCurrentGuess("")
@@ -138,7 +156,7 @@ function App() {
               transition={{ delay: 0.5 }}
               className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto"
             >
-              Save your friend from alien abduction by guessing the letters in the codeword.
+              Save your friend from alien abduction by guessing the letters in the codeword, or guess the entire word!
             </motion.p>
           </motion.div>
 
@@ -285,15 +303,15 @@ function App() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <AnimatePresence>
-                      {incorrectGuesses.map((letter, index) => (
+                      {incorrectGuesses.map((guess, index) => (
                         <motion.span
-                          key={letter}
+                          key={`${guess}-${index}`}
                           initial={{ opacity: 0, scale: 0, x: -20 }}
                           animate={{ opacity: 1, scale: 1, x: 0 }}
                           exit={{ opacity: 0, scale: 0 }}
                           className="px-2 py-1 bg-red-600/80 text-white rounded text-sm font-bold border border-red-400"
                         >
-                          {letter.toUpperCase()}
+                          {guess.toUpperCase()}
                         </motion.span>
                       ))}
                     </AnimatePresence>
@@ -350,9 +368,8 @@ function App() {
                     value={currentGuess}
                     onChange={(e) => setCurrentGuess(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Letter"
-                    maxLength={1}
-                    className="w-16 md:w-20 h-12 md:h-14 text-center text-xl md:text-2xl font-bold bg-gray-800/70 border-gray-600 text-white focus:border-green-400 focus:ring-green-400"
+                    placeholder="Letter or word"
+                    className="w-32 md:w-48 h-12 md:h-14 text-center text-xl md:text-2xl font-bold bg-gray-800/70 border-gray-600 text-white focus:border-green-400 focus:ring-green-400"
                   />
                   <Button 
                     onClick={handleGuess}
@@ -362,6 +379,9 @@ function App() {
                     Guess
                   </Button>
                 </div>
+                <p className="text-sm text-gray-400">
+                  Enter a single letter or guess the entire word!
+                </p>
                 <AnimatePresence>
                   {message && (
                     <motion.p 
