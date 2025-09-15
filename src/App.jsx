@@ -9,9 +9,32 @@ import './App.css'
 import ufoImage from './assets/7jkNfLelu3Qx.jpg' // UFO with tractor beam
 import spaceBackground from './assets/X9ZWEKEG5z6j.jpg' // Dark space background
 
+// Popular words from Dictionary.com - varied lengths for different difficulty levels
+const WORD_LIST = [
+  // 4-6 letters (Easy)
+  'love', 'time', 'work', 'life', 'home', 'world', 'music', 'dream', 'peace', 'happy',
+  'light', 'water', 'earth', 'space', 'magic', 'power', 'heart', 'smile', 'dance', 'laugh',
+  
+  // 7-8 letters (Medium)
+  'freedom', 'journey', 'mystery', 'rainbow', 'thunder', 'crystal', 'diamond', 'harmony',
+  'courage', 'wisdom', 'passion', 'victory', 'destiny', 'miracle', 'fantasy', 'adventure',
+  'treasure', 'universe', 'infinite', 'serenity',
+  
+  // 9-12 letters (Hard)
+  'beautiful', 'wonderful', 'adventure', 'chocolate', 'butterfly', 'celebrate', 'discovery',
+  'education', 'fantastic', 'happiness', 'knowledge', 'landscape', 'moonlight', 'nightmare',
+  'orchestra', 'paradise', 'questions', 'revolution', 'starlight', 'technology',
+  'underwater', 'vocabulary', 'watermelon', 'xylophone', 'yesterday', 'zodiacal',
+  
+  // Programming/Tech themed (Medium-Hard)
+  'algorithm', 'computer', 'database', 'function', 'internet', 'keyboard', 'language',
+  'network', 'program', 'software', 'website', 'developer', 'framework', 'javascript',
+  'python', 'react', 'coding', 'digital', 'virtual', 'artificial'
+]
+
 function App() {
-  const [codeword] = useState("codecademy")
-  const [answer, setAnswer] = useState("-".repeat("codecademy".length))
+  const [codeword, setCodeword] = useState("")
+  const [answer, setAnswer] = useState("")
   const [misses, setMisses] = useState(0)
   const [incorrectGuesses, setIncorrectGuesses] = useState([])
   const [currentGuess, setCurrentGuess] = useState("")
@@ -21,14 +44,38 @@ function App() {
 
   const maxMisses = 7
 
+  // Function to get a random word from the list
+  const getRandomWord = () => {
+    const randomIndex = Math.floor(Math.random() * WORD_LIST.length)
+    return WORD_LIST[randomIndex].toLowerCase()
+  }
+
+  // Initialize game with random word
+  const initializeGame = () => {
+    const newWord = getRandomWord()
+    setCodeword(newWord)
+    setAnswer("-".repeat(newWord.length))
+    setMisses(0)
+    setIncorrectGuesses([])
+    setCurrentGuess("")
+    setGameState("playing")
+    setMessage(`New word selected! It has ${newWord.length} letters.`)
+    setRevealedLetters(new Set())
+  }
+
+  // Initialize game on component mount
+  useEffect(() => {
+    initializeGame()
+  }, [])
+
   // Check for win/lose conditions
   useEffect(() => {
-    if (answer === codeword) {
+    if (codeword && answer === codeword) {
       setGameState("won")
-      setMessage("🎉 Hooray! You saved the person and earned a medal of honor!")
+      setMessage(`🎉 Hooray! You saved the person and earned a medal of honor! The word was "${codeword.toUpperCase()}"!`)
     } else if (misses >= maxMisses) {
       setGameState("lost")
-      setMessage("💀 Oh no! The UFO just flew away with another person!")
+      setMessage(`💀 Oh no! The UFO just flew away with another person! The word was "${codeword.toUpperCase()}".`)
     }
   }, [answer, codeword, misses])
 
@@ -97,17 +144,23 @@ function App() {
   }
 
   const resetGame = () => {
-    setAnswer("-".repeat(codeword.length))
-    setMisses(0)
-    setIncorrectGuesses([])
-    setCurrentGuess("")
-    setGameState("playing")
-    setMessage("")
-    setRevealedLetters(new Set())
+    initializeGame()
   }
 
   const getAbductionLevel = () => {
     return Math.min(misses / maxMisses, 1)
+  }
+
+  const getDifficultyColor = () => {
+    if (codeword.length <= 6) return 'text-green-400'
+    if (codeword.length <= 8) return 'text-yellow-400'
+    return 'text-red-400'
+  }
+
+  const getDifficultyLabel = () => {
+    if (codeword.length <= 6) return 'Easy'
+    if (codeword.length <= 8) return 'Medium'
+    return 'Hard'
   }
 
   // Particle component for visual effects
@@ -158,6 +211,18 @@ function App() {
             >
               Save your friend from alien abduction by guessing the letters in the codeword, or guess the entire word!
             </motion.p>
+            {codeword && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="mt-4"
+              >
+                <span className={`px-3 py-1 rounded-full text-sm font-bold ${getDifficultyColor()} bg-gray-800/50 border border-current`}>
+                  {getDifficultyLabel()} • {codeword.length} letters
+                </span>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* UFO and Abduction Scene */}
@@ -418,7 +483,7 @@ function App() {
                   onClick={resetGame}
                   className="h-14 px-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-lg transition-all duration-300 transform hover:scale-105"
                 >
-                  🚀 Play Again
+                  🚀 New Word
                 </Button>
               </motion.div>
             )}
